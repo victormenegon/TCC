@@ -1,18 +1,18 @@
-function [trapezoidal,dt0] = F_theta_e(theta_e)
+function trapezoidal = F_theta_e(theta_e)
 
-if(theta_e >= 0 & theta_e < 120), 
+if(theta_e >= 0 & theta_e < 2*pi/3), 
     trapezoidal = 1;
-    dt0 = 1;
-elseif(theta_e >= 120 & theta_e < 180)
-    trapezoidal = (1- ((6/180) * (theta_e - 120)));
-    dt0 = 1;
-elseif(theta_e >= 180 & theta_e < 300)
+  
+elseif(theta_e >= 2*pi/3 & theta_e < pi)
+    trapezoidal = 1 - ((6/pi) * (theta_e - (2*pi/3)));
+    
+elseif(theta_e >= pi & theta_e < 5*pi/3)
     trapezoidal = -1;
-    dt0 = 1;
-elseif(theta_e >= 300 & theta_e < 360)
-    trapezoidal = -1 + ((6/180) * (theta_e - 120));
-    dt0 = 1;
+    
+elseif(theta_e >= 5*pi/3 & theta_e < 2*pi)
+    trapezoidal = -1 + ((6/pi) * (theta_e - (5*pi/3)));
+    
 else 
     trapezoidal = 1;
-    dt0 = 0;
+    
 end
