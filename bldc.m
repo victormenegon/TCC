@@ -1,30 +1,38 @@
 clear;
 clc;
 
-%***** Constants and Variables initialization *****%
+%************ Constants and Variables initialization ************%
 
 n = 100000;
 
-Tload = 0.8;
+Tload = 2;
 V_barramento = 100;
 B = 3.2e-4;
 J = 8.7e-4;
 Rs = 4.7;
-P = 4;         %polos
-P_2 = P/2;     %pares de polos
-Ldq = 20e-3;   % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
+P = 4;              %polos
+P_2 = P/2;          %pares de polos
+Ldq = 20e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 ke = 0.377;
 ke_2 = ke/2;
 kt = 0.377;
-t = 0.00001;    %passo de calculo
+t = 0.00001;        %passo de calculo
 c_360 = 2*pi;
-phase = -pi/6;
-%**************************************************%
+phase = -pi/6;      %para corrigir o defasamento entre Vx e Ex, 
+                    %pq foi implementado com 30 de avanço.
+
+%****************************************************************%
 
 for(T = 1:n), 
 
 if (T-1 > 0),
-    
+    if(T >= 30000 & T < 65000),
+        V_barramento = 100
+    elseif (T>=65000)
+        V_barramento = 150;
+    else
+        V_barramento = 50;
+    end
     theta_a = theta_e(T-1);
     theta_b = theta_e(T-1) + (4*c_360)/6;
     theta_c = theta_e(T-1) + (c_360)/3;
@@ -37,7 +45,8 @@ if (T-1 > 0),
     Eb(T) = ke * wm(T-1) * eb;
     Ec(T) = ke * wm(T-1) * ec;
     
-    if(theta_e(T-1) <= (pi/6+phase)),
+    % Six-Step Modulation %
+    if(theta_e(T-1) <= 0),
         Va(T) =  0;
         Vb(T) = -V_barramento/2;
         Vc(T) = V_barramento/2;
@@ -92,10 +101,10 @@ if (T-1 > 0),
     Ia(T) = Ia(T-1) + dIa(T);
     Ib(T) = Ib(T-1) + dIb(T);
     Ic(T) = Ic(T-1) + dIc(T);
-
-time_lapsed(T) = T*t;
     
-else
+time_lapsed(T) = T*t;
+
+else %Inicializaçao
     
     dwm = zeros(n,1);
     wm = zeros(n,1);
@@ -127,7 +136,7 @@ else
 end
 end
 
-plot(time_lapsed,Te,'color','g');
+plot(time_lapsed,wm,'color','g');
 
 
 
