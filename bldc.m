@@ -5,8 +5,8 @@ clc;
 
 n = 100000;
 
+wm_ref = 167;
 Tload = 2;
-V_barramento = 100;
 B = 3.2e-4;
 J = 8.7e-4;
 Rs = 4.7;
@@ -20,19 +20,37 @@ t = 0.00001;        %passo de calculo
 c_360 = 2*pi;
 phase = -pi/6;      %para corrigir o defasamento entre Vx e Ex, 
                     %pq foi implementado com 30 de avanço.
+Kp_wm = 10;
+Ki_wm = 10;
+
+V_pwm = 10;
+V_bus = 311;
+fs = 5000;
+gain = V_bus/V_pwm;
 
 %****************************************************************%
 
-for(T = 1:n), 
+for(T = 1:n)
 
-if (T-1 > 0),
-    if(T >= 30000 & T < 65000),
-        V_barramento = 100
-    elseif (T>=65000)
-        V_barramento = 150;
+if (T-1 > 0)    
+    err_wm(T) = wm_ref - wm(T-1);
+    err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;
+    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);
+    
+    x(T) = x(T-1)+t;
+    y(T) = 50000*x(T-1);
+    if(x(T) <= 0.0002)
+        if(y(T) < V_ref(T-1)/gain)
+            pwm_st(T) = 1;
+        else
+            pwm_st(T) = 0;
+        end
     else
-        V_barramento = 50;
+        x(T) = 0;
     end
+    
+    V_barramento(T) = V_bus * pwm_st(T);
+   
     theta_a = theta_e(T-1);
     theta_b = theta_e(T-1) + (4*c_360)/6;
     theta_c = theta_e(T-1) + (c_360)/3;
@@ -46,34 +64,34 @@ if (T-1 > 0),
     Ec(T) = ke * wm(T-1) * ec;
     
     % Six-Step Modulation %
-    if(theta_e(T-1) <= 0),
+    if(theta_e(T-1) <= 0)
         Va(T) =  0;
-        Vb(T) = -V_barramento/2;
-        Vc(T) = V_barramento/2;
-    elseif(theta_e(T-1) > (pi/6+phase) & theta_e(T-1) <= (pi/2+phase))
-        Va(T) =  V_barramento/2;
-        Vb(T) = -V_barramento/2;
+        Vb(T) = -V_barramento(T)/2;
+        Vc(T) = V_barramento(T)/2;
+    elseif(theta_e(T-1) > (pi/6+phase) && theta_e(T-1) <= (pi/2+phase))
+        Va(T) =  V_barramento(T)/2;
+        Vb(T) = -V_barramento(T)/2;
         Vc(T) = 0;
-    elseif(theta_e(T-1) > (pi/2+phase) & theta_e(T-1) <= (5*pi/6+phase))
-        Va(T) = V_barramento/2;
+    elseif(theta_e(T-1) > (pi/2+phase) && theta_e(T-1) <= (5*pi/6+phase))
+        Va(T) = V_barramento(T)/2;
         Vb(T) = 0;
-        Vc(T) = -V_barramento/2;
-    elseif(theta_e(T-1) > (5*pi/6+phase) & theta_e(T-1) <= (7*pi/6+phase))
+        Vc(T) = -V_barramento(T)/2;
+    elseif(theta_e(T-1) > (5*pi/6+phase) && theta_e(T-1) <= (7*pi/6+phase))
         Va(T) = 0;
-        Vb(T) = V_barramento/2;
-        Vc(T) = -V_barramento/2;
-    elseif(theta_e(T-1) > (7*pi/6+phase) & theta_e(T-1) <= (3*pi/2+phase))
-        Va(T) = -V_barramento/2;
-        Vb(T) = V_barramento/2;
+        Vb(T) = V_barramento(T)/2;
+        Vc(T) = -V_barramento(T)/2;
+    elseif(theta_e(T-1) > (7*pi/6+phase) && theta_e(T-1) <= (3*pi/2+phase))
+        Va(T) = -V_barramento(T)/2;
+        Vb(T) = V_barramento(T)/2;
         Vc(T) = 0;
-    elseif(theta_e(T-1) > (3*pi/2+phase) & theta_e(T-1) <= (33*pi/18+phase))
-        Va(T) = -V_barramento/2;
+    elseif(theta_e(T-1) > (3*pi/2+phase) && theta_e(T-1) <= (33*pi/18+phase))
+        Va(T) = -V_barramento(T)/2;
         Vb(T) = 0;
-        Vc(T) = V_barramento/2;     
+        Vc(T) = V_barramento(T)/2;     
     else
         Va(T) =  0;
-        Vb(T) = -V_barramento/2;
-        Vc(T) = V_barramento/2;
+        Vb(T) = -V_barramento(T)/2;
+        Vc(T) = V_barramento(T)/2;
     end
     
     Ta(T) = kt * Ia(T-1) * ea;
@@ -131,7 +149,14 @@ else %Inicializaçao
     Tc = zeros(n,1);
     Te = zeros(n,1);
     time_lapsed = zeros(n,1);
-    
+    V_barramento = zeros(n,1);
+    V_ref = zeros(n,1);
+    err_wm = zeros(n,1);
+    err_int_wm = zeros(n,1);
+    x = zeros(n,1);
+    y = zeros(n,1);
+    pwm_st = zeros(n,1);
+    V_ref(T) = 311;
 
 end
 end
