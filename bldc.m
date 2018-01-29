@@ -3,44 +3,51 @@ clc;
 
 %************ Constants and Variables initialization ************%
 
-n = 100000;
+n = 10000000;       %simulation lenght
 
-wm_ref = 167;
-Tload = 2;
-B = 3.2e-4;
-J = 8.7e-4;
-Rs = 4.7;
+wm_ref = 167;       %rad/s
+Tload = 0;          %Nm
+B = 3.2e-4;         %Nms
+J = 8.7e-4;         %Kgm^2
+Rs = 4.7;           %ohms
 P = 4;              %polos
 P_2 = P/2;          %pares de polos
 Ldq = 20e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
-ke = 0.377;
-ke_2 = ke/2;
-kt = 0.377;
-t = 0.00001;        %passo de calculo
+kt = 0.377;         %V*s/rad
+t = 0.000001;       %passo de calculo
 c_360 = 2*pi;
 phase = -pi/6;      %para corrigir o defasamento entre Vx e Ex, 
                     %pq foi implementado com 30 de avanço.
-Kp_wm = 10;
-Ki_wm = 10;
+                    
+Kp_wm = 0.00356;    %Proportional Gain
+Ki_wm = 5;          %Integral Gain
 
-V_pwm = 10;
-V_bus = 311;
-fs = 5000;
-gain = V_bus/V_pwm;
+V_pwm = 10;         %PWM Voltage reference
+V_bus = 311;        %Bus Voltage
+Fs = 5000;          %Switching frequency of inverter
+Ts = 1/Fs;
+gain = V_bus/V_pwm; %Gain used to bring V_ref from controller to PWM range
 
 %****************************************************************%
 
 for(T = 1:n)
 
-if (T-1 > 0)    
-    err_wm(T) = wm_ref - wm(T-1);
-    err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;
-    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);
+if (T-1 > 0)
     
-    x(T) = x(T-1)+t;
-    y(T) = 50000*x(T-1);
-    if(x(T) <= 0.0002)
-        if(y(T) < V_ref(T-1)/gain)
+    if(T >= 1000000/2)
+        Tload = 0.40; 
+    end
+    
+    err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
+    err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
+    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * (0.0537) * err_int_wm(T);       %controller
+    
+    x(T) = x(T-1)+t;       %X axis to calculate sawtooth wave
+    y(T) = Fs*x(T-1);      %Y axis to calculate sawtooth wave
+    
+    if(x(T) <= Ts)         %PWM generation using Y function and V_ref to check if the switch will be conducting
+                           %Result can be ssen in V_barramento
+        if(y(T) <= V_ref(T-1)/gain)
             pwm_st(T) = 1;
         else
             pwm_st(T) = 0;
@@ -51,7 +58,7 @@ if (T-1 > 0)
     
     V_barramento(T) = V_bus * pwm_st(T);
    
-    theta_a = theta_e(T-1);
+    theta_a = theta_e(T-1);                 %electrical angle A, B and C
     theta_b = theta_e(T-1) + (4*c_360)/6;
     theta_c = theta_e(T-1) + (c_360)/3;
     
@@ -59,11 +66,11 @@ if (T-1 > 0)
     eb = F_theta_e(normalize_angle(theta_b));
     ec = F_theta_e(normalize_angle(theta_c));
             
-    Ea(T) = ke * wm(T-1) * ea;
-    Eb(T) = ke * wm(T-1) * eb;
-    Ec(T) = ke * wm(T-1) * ec;
+    Ea(T) = kt * wm(T-1) * ea;             %BEMF A, B and C
+    Eb(T) = kt * wm(T-1) * eb;
+    Ec(T) = kt * wm(T-1) * ec;
     
-    % Six-Step Modulation %
+%%%%% Six-Step Modulation %%%%%
     if(theta_e(T-1) <= 0)
         Va(T) =  0;
         Vb(T) = -V_barramento(T)/2;
@@ -97,6 +104,7 @@ if (T-1 > 0)
     Ta(T) = kt * Ia(T-1) * ea;
     Tb(T) = kt * Ib(T-1) * eb;
     Tc(T) = kt * Ic(T-1) * ec;
+    
     Te(T) = Ta(T) + Tb(T) + Tc(T);
     
     dIa(T) = (Va(T) - Rs * Ia(T-1) - Ea(T))*(t/Ldq);
@@ -122,7 +130,7 @@ if (T-1 > 0)
     
 time_lapsed(T) = T*t;
 
-else %Inicializaçao
+else %Variables inicialization
     
     dwm = zeros(n,1);
     wm = zeros(n,1);
