@@ -18,25 +18,23 @@ t = 0.000001;       %passo de calculo
 c_360 = 2*pi;
 phase = -pi/6;      %para corrigir o defasamento entre Vx e Ex, 
                     %pq foi implementado com 30 de avanço.
-Kp_wm = 0.00356;    %Proportional Gain
-Ki_wm = 5;          %Integral Gain
-               
- V_pwm = 10;         %PWM Voltage reference
- V_bus = 311;        %Bus Voltage
- Fs = 5000;          %Switching frequency of inverter
- Ts = 1/Fs;
- gain = V_bus/V_pwm; %Gain used to bring V_ref from controller to PWM range
+V_bus = 311; 
+Fs = 5000;
+Ts = 1/Fs;
+rst_svm = 1;
 
+dc_a = 0;
+dc_b = 0;
+dc_c = 0;
 %****************************************************************%
 
 for(T = 1:n)
 
 if (T-1 > 0)
-         
-    if(T >= 10000000/2)
-        Tload = 0.40; 
-    end
     
+    time_lapsed(T) = T*t;
+    V_barramento(T) = V_bus/2;
+   
     theta_a = theta_e(T-1);                 %electrical angle A, B and C
     theta_b = theta_e(T-1) + (4*c_360)/6;
     theta_c = theta_e(T-1) + (c_360)/3;
@@ -45,19 +43,219 @@ if (T-1 > 0)
     eb = F_theta_e(normalize_angle(theta_b));
     ec = F_theta_e(normalize_angle(theta_c));
             
-    Ea(T) = kt * wm(T-1) * ea;             %BEMF A, B and C
+    Ea(T) = kt * wm(T-1) * ea;              %BEMF A, B and C
     Eb(T) = kt * wm(T-1) * eb;
     Ec(T) = kt * wm(T-1) * ec;
+        
+    %%%%%% SVM Modulation %%%%%%
+    
+    r1 = sqrt(3)*sin((pi/3)-theta_m(T-1));
+    r2 = sqrt(3)*sin(theta_m(T-1));
+    r0 = 1-Ts*r1-Ts*r2;
+    
+    t1 = r1*Ts;
+    t2 = r2*Ts;
+    t0 =r0*Ts;
+    
+    tempo_acc = time_lapsed(T) * rst_svm;
+    
+%%%%% 1 Setor %%%%%    
+    if(theta_m(T-1) > 0 & theta_m(T-1) <= pi/3)
+        
+        svm_a = 2/3;
+        svm_b = -1/3;
+        svm_c = 1/3;
+        
+        if(tempo_acc >= 2*(t1+t2)+t0)
+            dc_a = 0;
+            dc_b = 0;
+            dc_c = 0;
+            rst_svm = 0;
+        else
+            dc_a = 1;
+            rst_svm = 1;
+        end
+        if(tempo_acc >= t1)
+            if(tempo_acc >= 2*(t2)+t0)
+                dc_b = 0;
+            else
+                dc_b = 1;
+            end
+        end
+        if(tempo_acc >= t1+t2)
+            if(tempo_acc >= t0)
+                dc_c = 0;
+            else
+                dc_c = 1;
+            end
+        end
+        
+%%%%% 2 Setor %%%%%              
+    elseif(theta_m(T-1) > (pi/3) & theta_m(T-1) <= (2*pi/3))
+        
+        svm_a = 1/3;
+        svm_b = 1/3;
+        svm_c = -2/3;
+        
+        if(tempo_acc >= 2*(t1+t2)+t0)
+            dc_a = 0;
+            dc_b = 0;
+            dc_c = 0;
+            rst_svm = 0;
+        else
+            dc_b = 1;
+            rst_svm = 1;
+        end
+        if(tempo_acc >= t2)
+            if(tempo_acc >= 2*(t1)+t0)
+                dc_a = 0;
+            else
+                dc_a = 1;
+            end
+        end
+        if(tempo_acc >= t1+t2)
+            if(tempo_acc >= t0)
+                dc_c = 0;
+            else
+                dc_c = 1;
+            end
+        end
+        
+%%%%% 3 Setor %%%%%        
+    elseif(theta_m(T-1) > (2*pi/3) & theta_m(T-1) <= (pi))
+        svm_a = -1/3;
+        svm_b = 2/3;
+        svm_c = -1/3;
+                 
+        if(tempo_acc >= 2*(t1+t2)+t0)
+            dc_a = 0;
+            dc_b = 0;
+            dc_c = 0;
+            rst_svm = 0;
+        else
+            dc_b = 1;
+            rst_svm = 1;
+        end
+        if(tempo_acc >= t1)
+            if(tempo_acc >= 2*(t2)+t0)
+                dc_c = 0;
+            else
+                dc_c = 1;
+            end
+        end
+        if(tempo_acc >= t1+t2)
+            if(tempo_acc >= t0)
+                dc_a = 0;
+            else
+                dc_a = 1;
+            end
+        end
+        
+%%%%% 4 Setor %%%%%          
+    elseif(theta_m(T-1) > (pi) & theta_m(T-1) <= (4*pi/3))
+        
+        svm_a = -2/3;
+        svm_b = 1/3;
+        svm_c = 1/3;
+        
+        if(tempo_acc >= 2*(t1+t2)+t0)
+            dc_a = 0;
+            dc_b = 0;
+            dc_c = 0;
+            rst_svm = 0;
+        else
+            dc_c = 1;
+            rst_svm = 1;
+        end
+        if(tempo_acc >= t2)
+            if(tempo_acc >= 2*(t1)+t0)
+                dc_b = 0;
+            else
+                dc_b = 1;
+            end
+        end
+        if(tempo_acc >= t1+t2)
+            if(tempo_acc >= t0)
+                dc_a = 0;
+            else
+                dc_a = 1;
+            end
+        end
+        
+%%%%% 5 Setor %%%%%          
+    elseif(theta_m(T-1) > (4*pi/3) & theta_m(T-1) <= (5*pi/3))
+        
+        svm_a = -1/3;
+        svm_b = -1/3;
+        svm_c = 2/3;
+        
+        if(tempo_acc >= 2*(t1+t2)+t0)
+            dc_a = 0;
+            dc_b = 0;
+            dc_c = 0;
+            rst_svm = 0;
+        else
+            dc_c = 1;
+            rst_svm = 1;
+        end
+        if(tempo_acc >= t1)
+            if(tempo_acc >= 2*(t2)+t0)
+                dc_a = 0;
+            else
+                dc_a = 1;
+            end
+        end
+        if(tempo_acc >= t1+t2)
+            if(tempo_acc >= t0)
+                dc_b = 0;
+            else
+                dc_b = 1;
+            end
+        end
+        
+ %%%%% 6 Setor %%%%%      
+    else
+        
+        svm_a = 1/3;
+        svm_b = -2/3;
+        svm_c = 1/3;
+        
+        if(tempo_acc >= 2*(t1+t2)+t0)
+            dc_a = 0;
+            dc_b = 0;
+            dc_c = 0;
+            rst_svm = 0;
+        else
+            dc_a = 1;
+            rst_svm = 1;
+        end
+        if(tempo_acc >= t2)
+            if(tempo_acc >= 2*(t1)+t0)
+                dc_c = 0;
+            else
+                dc_c = 1;
+            end
+        end
+        if(tempo_acc >= t1+t2)
+            if(tempo_acc >= t0)
+                dc_b = 0;
+            else
+                dc_b = 1;
+            end
+        end
+        
+    end
+
+    Va(T) = V_barramento(T)*svm_a * dc_a;
+    Vb(T) = V_barramento(T)*svm_b * dc_b;
+    Vc(T) = V_barramento(T)*svm_c * dc_c;
+        
     
     Ta(T) = kt * Ia(T-1) * ea;
     Tb(T) = kt * Ib(T-1) * eb;
     Tc(T) = kt * Ic(T-1) * ec;
     
     Te(T) = Ta(T) + Tb(T) + Tc(T);
-    
-    Va(T) = V_bus/2*sin(theta_a);
-    Vb(T) = V_bus/2*sin(theta_b);
-    Vc(T) = V_bus/2*sin(theta_c);
     
     dIa(T) = (Va(T) - Rs * Ia(T-1) - Ea(T))*(t/Ldq);
     dIb(T) = (Vb(T) - Rs * Ib(T-1) - Eb(T))*(t/Ldq);
@@ -70,7 +268,7 @@ if (T-1 > 0)
     
     theta_m(T) = (theta_m(T-1) + dtheta_m(T));
     
-    theta_m(T) = normalize_angle(theta_m(T));
+    theta_m_norm(T) = normalize_angle(theta_m(T));
      
     theta_e(T) = theta_e(T-1) + P_2 * dtheta_m(T);
     
@@ -80,10 +278,12 @@ if (T-1 > 0)
     Ib(T) = Ib(T-1) + dIb(T);
     Ic(T) = Ic(T-1) + dIc(T);
     
-    Id(T) = (2/3)*(cos(theta_m(T))*Ia(T) + ((sqrt(3)/2)*sin(theta_m(T)) - cos(theta_m(T))/2)*Ib(T) - ((sqrt(3)/2)*sin(theta_m(T)) + cos(theta_m(T))/2)*Ic(T));
-    Iq(T) = (2/3)*(-sin(theta_m(T))*Ia(T) + ((sqrt(3)/2)*cos(theta_m(T)) +sin(theta_m(T))/2)*Ib(T) + (-(sqrt(3)/2)*cos(theta_m(T)) + sin(theta_m(T))/2)*Ic(T));
+    Ks = (2/3)*([cos(theta_a) cos(theta_b) cos(theta_c); sin(theta_a) sin(theta_b) sin(theta_c); 0.5 0.5 0.5]);
     
-time_lapsed(T) = T*t;
+    adc_to_dqo = Ks*[Ia(T); Ib(T); Ic(T)];
+    
+    Id(T) = adc_to_dqo(1);
+    Iq(T) = adc_to_dqo(2);
 
 else %Variables inicialization
     
@@ -115,17 +315,9 @@ else %Variables inicialization
     Te = zeros(n,1);
     time_lapsed = zeros(n,1);
     V_barramento = zeros(n,1);
-    V_ref = zeros(n,1);
-    err_wm = zeros(n,1);
-    err_int_wm = zeros(n,1);
-    x = zeros(n,1);
-    y = zeros(n,1);
-    pwm_st = zeros(n,1);
-    V_ref(T) = 311;
 
 end
 end
 
-plot(time_lapsed,Id,'color','g');
-hold;
-plot(time_lapsed,Iq,'color','b');
+plot(time_lapsed,Va,'color','g');
+
