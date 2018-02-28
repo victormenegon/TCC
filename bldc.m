@@ -4,7 +4,7 @@ clc;
 
 %************ Constants and Variables initialization ************%
 
-n = 1000000;       %simulation lenght
+n = 10000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
 Tload = 0;          %Nm
@@ -29,8 +29,9 @@ r4 = r_off;
 r5 = r_off;
 r6 = r_off;
 
-Kp_wm = 0.00356;    %Proportional Gain
-Ki_wm = 5;          %Integral Gain
+polo = 0.0537;
+Kp_wm = 0.00356*20;    %Proportional Gain. 0.00356 (calculated) and 20 (empirical. To decrease rise time)
+Ki_wm = Kp_wm/(20*polo);
 
 V_pwm = 10;         %PWM Voltage reference
 V_bus = 311;        %Bus Voltage
@@ -38,15 +39,19 @@ Fs = 5000;          %Switching frequency of inverter
 Ts = 1/Fs;
 gain = V_bus/V_pwm; %Gain used to bring V_ref from controller to PWM range
 
+delta = V_bus/r_off;
 %****************************************************************%
 
 for(T = 1:n)
 
 if (T-1 > 0)
     
+    if(T >= 10000000/2)
+            Tload = 0.1; 
+    end
     err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
     err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
-    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * (0.0537) * err_int_wm(T);       %controller
+    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);       %controller
     
     x(T) = x(T-1)+t;       %X axis to calculate sawtooth wave
     y(T) = Fs*x(T-1);      %Y axis to calculate sawtooth wave
@@ -75,169 +80,127 @@ if (T-1 > 0)
     Ec(T) = kt * wm(T-1) * ec;
     
 %%%%% Six-Step Modulation %%%%%
-    if(theta_e(T-1) >= (0+phase) && theta_e(T-1) <= (pi/6+phase))
+    if(theta_e(T-1) <= (pi/6+phase))
         r1 = r_off;
         r2 = r_off; 
         r3 = r_off;
         r4 = r_on;
         r5 = r_on;
         r6 = r_off;
+
         if(pwm_st(T) == 0)
             r4 = r_off;
             r5 = r_off;
         end
     elseif(theta_e(T-1) > (pi/6+phase) && theta_e(T-1) <= (pi/2+phase))
-        if(Ic(T-1) <= 0)
             r1 = r_on;
             r2 = r_off;
             r3 = r_off;
             r4 = r_on;
             r5 = r_off;
-            r6 = r_off;  
-            if(pwm_st(T) == 0)
+            r6 = r_off;
+
+        if(pwm_st(T) == 0)
                 r1 = r_off;
                 r4 = r_off;
-            end
-        else
-            r1 = r_off;
-            r2 = r_off;
-            r3 = r_off;
-            r4 = r_on;
-            r5 = r_on;
-            r6 = r_off;
-            if(pwm_st(T) == 0)
-                r4 = r_off;
-                r5 = r_off;
-            end
         end
     elseif(theta_e(T-1) > (pi/2+phase) && theta_e(T-1) <= (5*pi/6+phase))
-        if(Ib(T-1) >= 0)
             r1 = r_on;
             r2 = r_off;
             r3 = r_off;
             r4 = r_off;
             r5 = r_off;
             r6 = r_on;
+            
             if(pwm_st(T) == 0)
                 r1 = r_off;
                 r6 = r_off;
             end
-        else
-            r1 = r_on;
-            r2 = r_off;
-            r3 = r_off;
-            r4 = r_on;
-            r5 = r_off;
-            r6 = r_off;
-            if(pwm_st(T) == 0)
-                r1 = r_off;
-                r4 = r_off;
-            end
-        end
     elseif(theta_e(T-1) > (5*pi/6+phase) && theta_e(T-1) <= (7*pi/6+phase))
-        if(Ia(T-1) <= 0)
             r1 = r_off;
             r2 = r_off;
             r3 = r_on;
             r4 = r_off;
             r5 = r_off;
             r6 = r_on;
+        
             if(pwm_st(T) == 0)
-                r2 = r_off;
                 r6 = r_off;
-            end
-        else
-            r1 = r_on;
-            r2 = r_off;
-            r3 = r_off;
-            r4 = r_off;
-            r5 = r_off;
-            r6 = r_on; 
-            if(pwm_st(T) == 0)
-                r1 = r_off;
-                r6 = r_off;
-            end
-        end            
+                r3 = r_off;
+            end       
     elseif(theta_e(T-1) > (7*pi/6+phase) && theta_e(T-1) <= (3*pi/2+phase))
-        if(Ic(T-1) >= 0)
             r1 = r_off;
             r2 = r_on;
             r3 = r_on;
             r4 = r_off;
             r5 = r_off;
             r6 = r_off; 
+        
             if(pwm_st(T) == 0)
                 r2 = r_off;
                 r3 = r_off;
             end
-        else
-            r1 = r_off;
-            r2 = r_off;
-            r3 = r_on;
-            r4 = r_off;
-            r5 = r_off;
-            r6 = r_on;
-            if(pwm_st(T) == 0)
-                r3 = r_off;
-                r6 = r_off;
-            end
-        end
     elseif(theta_e(T-1) > (3*pi/2+phase) && theta_e(T-1) <= (33*pi/18+phase))  
-        if(Ib(T-1) <= 0)
             r1 = r_off;
             r2 = r_on;
             r3 = r_off;
             r4 = r_off;
             r5 = r_on;
             r6 = r_off;
+
             if(pwm_st(T) == 0)
                 r2 = r_off;
                 r5 = r_off;
             end
-        else
-            r1 = r_off;
-            r2 = r_on;
-            r3 = r_on;
-            r4 = r_off;
-            r5 = r_off;
-            r6 = r_off;
-            if(pwm_st(T) == 0)
-                r2 = r_off;
-                r3 = r_off;
-            end
-        end
     else
-        if(Ia(T-1) >= 0)
             r1 = r_off;
             r2 = r_off;
             r3 = r_off;
             r4 = r_on;
             r5 = r_on;
             r6 = r_off;
+                        
             if(pwm_st(T) == 0)
                 r4 = r_off;
                 r5 = r_off;
             end
-        else
+    end
+    
+    if(r1 == r_off && r2 == r_off)
+        if(Ia(T-1) >= delta)
             r1 = r_off;
             r2 = r_on;
+        elseif (Ia(T-1) <= -delta)
+            r1 = r_on;
+            r2 = r_off;
+        end
+    end
+    if(r3 == r_off && r4 == r_off)
+        if(Ib(T-1) >= delta)
             r3 = r_off;
+            r4 = r_on;
+        elseif (Ib(T-1) <= -delta)
+            r3 = r_on;
             r4 = r_off;
+        end
+    end
+    if(r5 == r_off && r6 == r_off)
+        if(Ic(T-1) >= delta)
+            r5 = r_off;
+            r6 = r_on;  
+        elseif (Ic(T-1) <= -delta)
             r5 = r_on;
             r6 = r_off;
-            if(pwm_st(T) == 0)
-                r2 = r_off;
-                r3 = r_off;
-            end
         end
     end
     
-    k1 = (r1*r2)/(r1+r2);
-    k2 = (r3*r4)/(r3+r4);
-    k3 = (r5*r6)/(r5+r6);
-    k4 = r2/(r1+r2);
-    k5 = r4/(r3+r4);
-    k6 = r6/(r5+r6);
+    
+    k1(T) = (r1*r2)/(r1+r2);
+    k2(T) = (r3*r4)/(r3+r4);
+    k3(T) = (r5*r6)/(r5+r6);
+    k4(T) = r2/(r1+r2);
+    k5(T) = r4/(r3+r4);
+    k6(T) = r6/(r5+r6);
     
     Ta(T) = kt * Ia(T-1) * ea;
     Tb(T) = kt * Ib(T-1) * eb;
@@ -245,9 +208,9 @@ if (T-1 > 0)
     
     Te(T) = Ta(T) + Tb(T) + Tc(T);
     
-    dIa(T) = ((-2*k1*Ia(T-1))+(-2*Rs*Ia(T-1))+(k2*Ib(T-1))+(Rs*Ib(T-1))+(k3*Ic(T-1))+(Rs*Ic(T-1))+3*((2*k4*V_bus)-(k5*V_bus)-(k6*V_bus)+(Eb(T)+Ec(T)-2*Ea(T))))*(t/(3*Ldq));
-    dIb(T) = ((-2*k2*Ib(T-1))+(-2*Rs*Ib(T-1))+(k1*Ia(T-1))+(Rs*Ia(T-1))+(k3*Ic(T-1))+(Rs*Ic(T-1))+3*((2*k5*V_bus)-(k4*V_bus)-(k6*V_bus)+(Ea(T)+Ec(T)-2*Eb(T))))*(t/(3*Ldq));
-    dIc(T) = ((-2*k3*Ic(T-1))+(-2*Rs*Ic(T-1))+(k1*Ia(T-1))+(Rs*Ia(T-1))+(k2*Ib(T-1))+(Rs*Ib(T-1))+3*((2*k6*V_bus)-(k5*V_bus)-(k5*V_bus)+(Ea(T)+Eb(T)-2*Ec(T))))*(t/(3*Ldq));
+    dIa(T) = ((-2*k1(T)*Ia(T-1))+(-2*Rs*Ia(T-1))+(k2(T)*Ib(T-1))+(Rs*Ib(T-1))+(k3(T)*Ic(T-1))+(Rs*Ic(T-1))+((2*k4(T)*V_bus)-(k5(T)*V_bus)-(k6(T)*V_bus)+(Eb(T)+Ec(T)-2*Ea(T))))*(t/(3*Ldq));
+    dIb(T) = ((-2*k2(T)*Ib(T-1))+(-2*Rs*Ib(T-1))+(k1(T)*Ia(T-1))+(Rs*Ia(T-1))+(k3(T)*Ic(T-1))+(Rs*Ic(T-1))+((2*k5(T)*V_bus)-(k4(T)*V_bus)-(k6(T)*V_bus)+(Ea(T)+Ec(T)-2*Eb(T))))*(t/(3*Ldq));
+    dIc(T) = ((-2*k3(T)*Ic(T-1))+(-2*Rs*Ic(T-1))+(k1(T)*Ia(T-1))+(Rs*Ia(T-1))+(k2(T)*Ib(T-1))+(Rs*Ib(T-1))+((2*k6(T)*V_bus)-(k4(T)*V_bus)-(k5(T)*V_bus)+(Ea(T)+Eb(T)-2*Ec(T))))*(t/(3*Ldq));
     
     dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
     wm(T) = wm(T-1) + dwm(T);
@@ -303,11 +266,15 @@ else %Variables inicialization
     y = zeros(n,1);
     pwm_st = zeros(n,1);
     V_ref(T) = 311;
-
 end
 end
 
-plot(time_lapsed,wm,'color','g');
+% plot(time_lapsed,Ia,'color','g');
+% hold;
+% plot(time_lapsed,Ib,'color','r');
+% plot(time_lapsed,Ic,'color','b');
+plot(time_lapsed,wm,'color','r');
+
 
 
 
