@@ -23,9 +23,18 @@ Fs = 5000;
 Ts = 1/Fs;
 rst_svm = 1;
 
+Id_ref = 0;
 dc_a = 0;
 dc_b = 0;
 dc_c = 0;
+
+Kp_wm = 11.73;
+Ki_wm = 11.73;
+Kp_iq = 0.001538;
+Ki_iq = 10;
+Kp_id = 0.001538;
+Ki_id = 10;
+
 
 %****************************************************************%
 
@@ -33,8 +42,9 @@ for(T = 1:n)
     
     if (T-1 > 0)
          if(T >= 10000000/2)
-        V_bus = 311; 
+            V_bus = 311; 
          end
+         
         time_lapsed(T) = T*t;
               
         theta_m(T-1) = theta_m(T-1);
@@ -51,6 +61,28 @@ for(T = 1:n)
         Eb(T) = kt * wm(T-1) * eb;
         Ec(T) = kt * wm(T-1) * ec;
         
+        % Speed Loop %
+        err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
+        err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
+        Iq_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * (0.0537) * err_int_wm(T);       %controller
+        
+        % Iq Loop %
+        err_iq(T) = Iq_ref(T) - Iq(T-1);                   %Proportional error
+        err_int_iq(T) = err_int_iq(T-1) + err_iq(T)*t;  %Integral error
+        Vq_ref(T) =  Kp_iq * err_iq(T) + Ki_iq * (0.0537) * err_int_iq(T);       %controller
+        
+        % Id Loop %
+        err_id(T) = Id_ref - Id(T-1);                   %Proportional error
+        err_int_id(T) = err_int_id(T-1) + err_id(T)*t;  %Integral error
+        Vd_ref(T) =  Kp_id * err_id(T) + Ki_id * (0.0537) * err_int_id(T);       %controller
+        
+        Kabc = [cos(theta_a) -sin(theta_a); 0.5*(-cos(theta_b)+1.73*sin(theta_b)) 0.5*(sin(theta_b)+1.73*cos(theta_b));  0.5*(-cos(theta_b)-1.73*sin(theta_b)) 0.5*(sin(theta_b)-1.73*cos(theta_b))];
+        
+        dq_to_abc = Kabc * [Vd_ref(T); Vq_ref(T)];
+        Va_ref(T) = dq_to_abc(1);
+        Vb_ref(T) = dq_to_abc(2);
+        Vc_ref(T) = dq_to_abc(3);
+        
         %%%%%% SVM Modulation %%%%%% 13/02/18 FONTE: https://www.embedded.com/design/real-world-applications/4441150/2/Painless-MCU-implementation-of-space-vector-modulation-for-electric-motor-systems
         Voltage_Phase = [Va(T-1) Vb(T-1) Vc(T-1)];
         min_V = min(Voltage_Phase);
@@ -58,10 +90,9 @@ for(T = 1:n)
         V_neutral(T) = 0.5 * (max_V + min_V);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        Va(T) = V_bus/2 * (sin(theta_a)) - V_neutral(T);
-        Vb(T) = V_bus/2 * (sin(theta_b)) - V_neutral(T);
-        Vc(T) = V_bus/2 * (sin(theta_c)) - V_neutral(T);
-        
+        Va(T) = Va_ref(T) * (sin(theta_a)) - V_neutral(T);
+        Vb(T) = Vb_ref(T) * (sin(theta_b)) - V_neutral(T);
+        Vc(T) = Vc_ref(T) * (sin(theta_c)) - V_neutral(T);
         
         Ta(T) = kt * Ia(T-1) * ea;
         Tb(T) = kt * Ib(T-1) * eb;
@@ -90,12 +121,12 @@ for(T = 1:n)
         Ib(T) = Ib(T-1) + dIb(T);
         Ic(T) = Ic(T-1) + dIc(T);
         
-            Ks = (2/3)*([cos(theta_a) cos(theta_b) cos(theta_c); sin(theta_a) sin(theta_b) sin(theta_c); 0.5 0.5 0.5]);
+        Kdq = (2/3)*([cos(theta_a) cos(theta_b) cos(theta_c); sin(theta_a) sin(theta_b) sin(theta_c); 0.5 0.5 0.5]);
         
-            adc_to_dqo = Ks*[Ia(T); Ib(T); Ic(T)];
+        adc_to_dqo = Kdq*[Ia(T); Ib(T); Ic(T)];
         
-            Id(T) = adc_to_dqo(1);
-            Iq(T) = adc_to_dqo(2);
+        Id(T) = adc_to_dqo(1);
+        Iq(T) = adc_to_dqo(2);
         
     else %Variables inicialization
         
@@ -127,6 +158,18 @@ for(T = 1:n)
         Te = zeros(n,1);
         time_lapsed = zeros(n,1);
         V_neutral = zeros(n,1);
+        Iq_ref = zeros(n,1);
+        err_int_wm = zeros(n,1);
+        err_wm = zeros(n,1);
+        err_int_iq = zeros(n,1);
+        err_iq = zeros(n,1);
+        err_int_id = zeros(n,1);
+        err_id = zeros(n,1);
+        Vq_ref = zeros(n,1);
+        Vd_ref = zeros(n,1);
+        Va_ref = zeros(n,1);
+        Vb_ref = zeros(n,1);
+        Vc_ref = zeros(n,1);
     end
 end
 
