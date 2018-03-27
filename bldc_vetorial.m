@@ -14,7 +14,7 @@ P = 4;              %polos
 P_2 = P/2;          %pares de polos
 Ldq = 20e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 kt = 0.377;         %V*s/rad
-t = 0.000001;        %passo de calculo
+t = 0.00001;        %passo de calculo
 c_360 = 2*pi;
 V_bus = 150;
 
@@ -23,12 +23,12 @@ dc_a = 0;
 dc_b = 0;
 dc_c = 0;
 
-Kp_wm = 0.001154;
+Kp_wm = 0.00115384;
 Ki_wm = Kp_wm/(2.71875);
-Kp_Id = 0.6;
-Ki_Id = Kp_Id*235;
-Kp_Iq = 0.6;
-Ki_Iq = Kp_Iq*235;
+Kp_Id = 0.03;
+Ki_Id = Kp_Id/235;
+Kp_Iq = 0.03;
+Ki_Iq = Kp_Iq/235;
 
 %****************************************************************%
 
@@ -36,29 +36,22 @@ for(T = 1:n)
     
     if (T-1 > 0)
 
-        if(T-2 <= 0)
-            a = 0;
-            b = 0;
-        else
-            a = Iq(T-2);
-            b = Id(T-2);
-        end
         err_wm(T) = wm_ref - wm(T-1);                                 %Proportional error
         err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;                %Integral error
         Iq_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);       %controller
         
         err_Iq(T) = Iq_ref(T) - Iq(T-1);
         err_int_Iq(T) = err_int_Iq(T-1) + err_Iq(T)*t;
-        Vq_ref(T) = Kp_Iq * err_Iq(T) + err_int_Iq(T) + Ldq*wm(T-1)*P_2*(Id(T-1)-b);
+        Vq_ref(T) = Kp_Iq * err_Iq(T) + err_int_Iq(T) + Ldq*wm(T-1)*Id(T-1) + wm(T-1)*kt;
         
         err_Id(T) = Id_ref(T) - Id(T-1);
         err_int_Id(T) = err_int_Id(T-1) + err_Id(T)*t;
-        Vd_ref(T) = Kp_Id * err_Id(T) + err_int_Id(T) - Ldq*wm(T-1)*P_2*(Iq(T-1)-a);
+        Vd_ref(T) = Kp_Id * err_Id(T) + err_int_Id(T) - Ldq*wm(T-1)*Iq(T-1);
 
         time_lapsed(T) = T*t;
         
-        %https://www.mathworks.com/help/physmod/sps/powersys/ref/abctodq0dq0toabc.html
-        Ks = [cos(theta_a(T-1)) -sin(theta_a(T-1));cos(theta_b(T-1)) -sin(theta_b(T-1)); cos(theta_c(T-1)) -sin(theta_c(T-1))];
+        %Krishnan p.237 Permanent Magnet Synchronous Machines
+        Ks = [cos(theta_a(T-1)) sin(theta_a(T-1));cos(theta_b(T-1)) sin(theta_b(T-1)); cos(theta_c(T-1)) sin(theta_c(T-1))];
         dq0_to_adc = Ks*[Vd_ref(T);Vq_ref(T)];
 
         Va_a(T) = dq0_to_adc(1);
@@ -73,7 +66,6 @@ for(T = 1:n)
         Eb(T) = kt * wm(T-1) * eb(T);
         Ec(T) = kt * wm(T-1) * ec(T);
 
-        
         %%%%%% SVM Modulation %%%%%% 13/02/18 FONTE: https://www.embedded.com/design/real-world-applications/4441150/2/Painless-MCU-implementation-of-space-vector-modulation-for-electric-motor-systems
         Voltage_Phase = [Va_a(T) Vb_a(T) Vc_a(T)];
         min_V = min(Voltage_Phase);
@@ -83,7 +75,7 @@ for(T = 1:n)
         Va(T) = Va_a(T) - V_neutral(T);
         Vb(T) = Vb_a(T) - V_neutral(T);
         Vc(T) = Vc_a(T) - V_neutral(T);
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         dIa(T) = (Va(T) - Rs * Ia(T-1) - Ea(T))*(t/Ldq);
         dIb(T) = (Vb(T) - Rs * Ib(T-1) - Eb(T))*(t/Ldq);
@@ -96,7 +88,6 @@ for(T = 1:n)
         Ta(T) = kt * Ia(T) * ea(T);
         Tb(T) = kt * Ib(T) * eb(T);
         Tc(T) = kt * Ic(T) * ec(T);
-        
         Te(T) = Ta(T) + Tb(T) + Tc(T);
               
         dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
@@ -109,12 +100,10 @@ for(T = 1:n)
         theta_a(T) = theta_e(T);                 %electrical angle A, B and C
         theta_b(T) = normalize_angle(theta_a(T) + (4*c_360)/6);
         theta_c(T) = normalize_angle(theta_a(T) + (c_360)/3);
-        
 
-        Ks_inv = (2/3)*([cos(theta_a(T)) cos(theta_b(T)) cos(theta_c(T)); -sin(theta_a(T)) -sin(theta_b(T)) -sin(theta_c(T))]);
+        Ks_inv = (2/3)*([cos(theta_a(T)) cos(theta_b(T)) cos(theta_c(T)); sin(theta_a(T)) sin(theta_b(T)) sin(theta_c(T))]);
         adc_to_dqo = Ks_inv*[Ia(T); Ib(T); Ic(T)];
 
-        
         Id(T) = adc_to_dqo(1);
         Iq(T) = adc_to_dqo(2);
 
@@ -177,6 +166,6 @@ plot(time_lapsed,theta_e,'color','g');
 subplot(4,1,2);
 plot(time_lapsed,wm,'color','b');
 subplot(4,1,3);
-plot(time_lapsed,Va,'color','y');
+plot(time_lapsed,Iq,'color','y');
 subplot(4,1,4);
-plot(time_lapsed,Vc,'color','r');
+plot(time_lapsed,Id,'color','r');
