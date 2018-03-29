@@ -1,6 +1,7 @@
 close all;
 clear all;
 clc;
+
 %************ Constants and Variables initialization ************%
 
 n = 10000000;       %simulation lenght
@@ -14,7 +15,7 @@ P = 4;              %polos
 P_2 = P/2;          %pares de polos
 Ldq = 20e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 kt = 0.377;         %V*s/rad
-t = 0.00001;        %passo de calculo
+t = 0.00001;       %passo de calculo
 c_360 = 2*pi;
 V_bus = 150;
 
@@ -23,12 +24,12 @@ dc_a = 0;
 dc_b = 0;
 dc_c = 0;
 
-Kp_wm = 0.00115384;
+Kp_wm = 1.35;%0.00115384;
 Ki_wm = Kp_wm/(2.71875);
-Kp_Id = 0.03;
-Ki_Id = Kp_Id/235;
-Kp_Iq = 0.03;
-Ki_Iq = Kp_Iq/235;
+Kp_Id = 0.2;
+Ki_Id = Kp_Id*235;
+Kp_Iq = 0.2;
+Ki_Iq = Kp_Iq*235;
 
 %****************************************************************%
 
@@ -52,7 +53,7 @@ for(T = 1:n)
         
         %Krishnan p.237 Permanent Magnet Synchronous Machines
         Ks = [cos(theta_a(T-1)) sin(theta_a(T-1));cos(theta_b(T-1)) sin(theta_b(T-1)); cos(theta_c(T-1)) sin(theta_c(T-1))];
-        dq0_to_adc = Ks*[Vd_ref(T);Vq_ref(T)];
+        dq0_to_adc = Ks*[Vq_ref(T);Vd_ref(T)];
 
         Va_a(T) = dq0_to_adc(1);
         Vb_a(T) = dq0_to_adc(2);
@@ -92,7 +93,6 @@ for(T = 1:n)
               
         dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
         wm(T) = wm(T-1) + dwm(T);
-        
         dtheta_m(T) = wm(T) * t;
         theta_m(T) = normalize_angle(theta_m(T-1) + dtheta_m(T));
         theta_e(T) = normalize_angle(theta_e(T-1) + P_2 * dtheta_m(T));
@@ -104,8 +104,8 @@ for(T = 1:n)
         Ks_inv = (2/3)*([cos(theta_a(T)) cos(theta_b(T)) cos(theta_c(T)); sin(theta_a(T)) sin(theta_b(T)) sin(theta_c(T))]);
         adc_to_dqo = Ks_inv*[Ia(T); Ib(T); Ic(T)];
 
-        Id(T) = adc_to_dqo(1);
-        Iq(T) = adc_to_dqo(2);
+        Iq(T) = adc_to_dqo(1);
+        Id(T) = adc_to_dqo(2);
 
     else %Variables inicialization
         

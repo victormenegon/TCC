@@ -49,9 +49,9 @@ if (T-1 > 0)
     if(T >= 10000000/2)
             Tload = 0.1; 
     end
-    err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
-    err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
-    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);       %controller
+    err_wm(T) = wm_ref - wm(T-1);                               %Proportional error
+    err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;              %Integral error
+    V_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);      %controller
     
     x(T) = x(T-1)+t;       %X axis to calculate sawtooth wave
     y(T) = Fs*x(T-1);      %Y axis to calculate sawtooth wave
