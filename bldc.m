@@ -7,7 +7,7 @@ clc;
 n = 10000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
-Tload = 0;          %Nm
+Tload = 0.0;          %Nm
 B = 3.2e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
 Rs = 4.7;           %ohms
@@ -30,8 +30,8 @@ r5 = r_off;
 r6 = r_off;
 
 polo = 0.0537;
-Kp_wm = 0.00356*20;    %Proportional Gain. 0.00356 (calculated) and 20 (empirical. To decrease rise time)
-Ki_wm = Kp_wm/(20*polo);
+Kp_wm = 0.00356;    %Proportional Gain. 0.00356 (calculated) and 20 (empirical. To decrease rise time)
+Ki_wm = Kp_wm/(polo);
 
 V_pwm = 10;         %PWM Voltage reference
 V_bus = 311;        %Bus Voltage
@@ -45,7 +45,7 @@ delta = V_bus/r_off;
 for(T = 1:n)
 
 if (T-1 > 0)
-    
+
     if(T >= 10000000/2)
             Tload = 0.1; 
     end
@@ -65,6 +65,8 @@ if (T-1 > 0)
         end
     else
         x(T) = 0;
+        y(T) = 0;
+        pwm_st(T) = 0;
     end
    
     theta_a = theta_e(T-1);                 %electrical angle A, B and C
@@ -80,7 +82,7 @@ if (T-1 > 0)
     Ec(T) = kt * wm(T-1) * ec;
     
 %%%%% Six-Step Modulation %%%%%
-    if(theta_e(T-1) <= (pi/6+phase))
+if(theta_e(T-1) <= (pi/6+phase))
         r1 = r_off;
         r2 = r_off; 
         r3 = r_off;
@@ -89,9 +91,19 @@ if (T-1 > 0)
         r6 = r_off;
 
         if(pwm_st(T) == 0)
+            if(Ic(T-1) >= delta)
+            r3 = r_on;
+            r5 = r_on;
             r4 = r_off;
+            r6 = r_off;
+            elseif (Ic(T-1) <= -delta)
+            r4 = r_on;
+            r6 = r_on;
+            r3 = r_off;
             r5 = r_off;
+            end
         end
+            
     elseif(theta_e(T-1) > (pi/6+phase) && theta_e(T-1) <= (pi/2+phase))
             r1 = r_on;
             r2 = r_off;
@@ -101,8 +113,17 @@ if (T-1 > 0)
             r6 = r_off;
 
         if(pwm_st(T) == 0)
-                r1 = r_off;
-                r4 = r_off;
+            if(Ia(T-1) >= delta)
+            r1 = r_on;
+            r3 = r_on;
+            r2 = r_off;
+            r4 = r_off;
+            elseif (Ia(T-1) <= -delta)
+            r2 = r_on;
+            r4 = r_on;
+            r1 = r_off;
+            r3 = r_off;
+            end
         end
     elseif(theta_e(T-1) > (pi/2+phase) && theta_e(T-1) <= (5*pi/6+phase))
             r1 = r_on;
@@ -112,9 +133,18 @@ if (T-1 > 0)
             r5 = r_off;
             r6 = r_on;
             
-            if(pwm_st(T) == 0)
-                r1 = r_off;
+            if(pwm_st(T) == 0)   
+                if(Ia(T-1) >= delta)
+                r1 = r_on;
+                r5 = r_on;
+                r2 = r_off;
                 r6 = r_off;
+                elseif (Ia(T-1) <= -delta)
+                r2 = r_on;
+                r6 = r_on;
+                r1 = r_off;
+                r5 = r_off;
+                end
             end
     elseif(theta_e(T-1) > (5*pi/6+phase) && theta_e(T-1) <= (7*pi/6+phase))
             r1 = r_off;
@@ -125,8 +155,17 @@ if (T-1 > 0)
             r6 = r_on;
         
             if(pwm_st(T) == 0)
+                if(Ib(T-1) >= delta)
+                r3 = r_on;
+                r5 = r_on;
+                r4 = r_off;
                 r6 = r_off;
+                elseif (Ib(T-1) <= -delta)
+                r4 = r_on;
+                r6 = r_on;
                 r3 = r_off;
+                r5 = r_off;
+        end
             end       
     elseif(theta_e(T-1) > (7*pi/6+phase) && theta_e(T-1) <= (3*pi/2+phase))
             r1 = r_off;
@@ -137,8 +176,17 @@ if (T-1 > 0)
             r6 = r_off; 
         
             if(pwm_st(T) == 0)
+                if(Ib(T-1) >= delta)
+                r1 = r_on;
+                r3 = r_on;
                 r2 = r_off;
+                r4 = r_off;
+                elseif (Ib(T-1) <= -delta)
+                r2 = r_on;
+                r4 = r_on;
+                r1 = r_off;
                 r3 = r_off;
+                end
             end
     elseif(theta_e(T-1) > (3*pi/2+phase) && theta_e(T-1) <= (33*pi/18+phase))  
             r1 = r_off;
@@ -149,8 +197,17 @@ if (T-1 > 0)
             r6 = r_off;
 
             if(pwm_st(T) == 0)
+                if(Ic(T-1) >= delta)
+                r1 = r_on;
+                r5 = r_on; 
                 r2 = r_off;
-                r5 = r_off;
+                r6 = r_off;
+                elseif (Ic(T-1) <= -delta)
+                r2 = r_on;
+                r6 = r_on;
+                r1 = r_off;
+                r5 = r_off; 
+                end
             end
     else
             r1 = r_off;
@@ -161,10 +218,19 @@ if (T-1 > 0)
             r6 = r_off;
                         
             if(pwm_st(T) == 0)
+                if(Ic(T-1) >= delta)
+                r3 = r_on;
+                r5 = r_on; 
                 r4 = r_off;
+                r6 = r_off;
+                elseif (Ic(T-1) <= -delta)
+                r4 = r_on;
+                r6 = r_on;
+                r3 = r_off;
                 r5 = r_off;
+                end
             end
-    end
+end
     
     if(r1 == r_off && r2 == r_off)
         if(Ia(T-1) >= delta)
@@ -193,7 +259,6 @@ if (T-1 > 0)
             r6 = r_off;
         end
     end
-    
     
     k1(T) = (r1*r2)/(r1+r2);
     k2(T) = (r3*r4)/(r3+r4);
@@ -228,6 +293,10 @@ if (T-1 > 0)
     Ia(T) = Ia(T-1) + dIa(T);
     Ib(T) = Ib(T-1) + dIb(T);
     Ic(T) = Ic(T-1) + dIc(T);
+    
+    Va(T) = Rs*Ia(T) + Ldq*dIa(T) +  Ea(T);
+    Vb(T) = Rs*Ib(T) + Ldq*dIb(T) +  Eb(T);
+    Vc(T) = Rs*Ic(T) + Ldq*dIc(T) +  Ec(T);
     
 time_lapsed(T) = T*t;
 
@@ -269,11 +338,11 @@ else %Variables inicialization
 end
 end
 
-% plot(time_lapsed,Ia,'color','g');
-% hold;
-% plot(time_lapsed,Ib,'color','r');
-% plot(time_lapsed,Ic,'color','b');
-plot(time_lapsed,wm,'color','r');
+ plot(time_lapsed,Ia,'color','g');
+ hold;
+ plot(time_lapsed,Ib,'color','r');
+ plot(time_lapsed,Ic,'color','b');
+%plot(time_lapsed,wm,'color','r');
 
 
 
