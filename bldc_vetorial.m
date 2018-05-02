@@ -8,14 +8,14 @@ n = 10000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
 Tload = 0;          %Nm
-B = 3.2e-4;         %Nms
+B = 2.8142e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
-Rs = 4.7;           %ohms
+Rs = 4.65;           %ohms
 P = 4;              %polos
 P_2 = P/2;          %pares de polos
-Ldq = 20e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
-kt = 0.377;         %V*s/rad
-t = 0.00001;       %passo de calculo
+Ldq = 69.7e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
+kt = 0.359;         %V*s/rad
+t = 0.000001;       %passo de calculo
 c_360 = 2*pi;
 V_bus = 150;
 
@@ -24,12 +24,12 @@ dc_a = 0;
 dc_b = 0;
 dc_c = 0;
 
-Kp_wm = 1.35;%0.00115384;
-Ki_wm = Kp_wm/(2.71875);
-Kp_Id = 0.2;
-Ki_Id = Kp_Id*235;
-Kp_Iq = 0.2;
-Ki_Iq = Kp_Iq*235;
+Kp_wm = 1.5636;
+Ki_wm = Kp_wm/(3.0914);
+Kp_Id = 0.697;
+Ki_Id = Kp_Id*66.714;
+Kp_Iq = 0.676;
+Ki_Iq = Kp_Iq*68.7871;
 
 %****************************************************************%
 

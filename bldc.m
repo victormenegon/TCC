@@ -8,13 +8,13 @@ n = 10000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
 Tload = 0.0;          %Nm
-B = 3.2e-4;         %Nms
+B = 2.8142e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
-Rs = 4.7;           %ohms
+Rs = 4.65;           %ohms
 P = 4;              %polos
 P_2 = P/2;          %pares de polos
-Ldq = 20e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
-kt = 0.377;         %V*s/rad
+Ldq = 69.7e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
+kt = 0.359;         %V*s/rad
 t = 0.000001;       %passo de calculo
 c_360 = 2*pi;
 phase = -pi/6;      %para corrigir o defasamento entre Vx e Ex, 
@@ -29,8 +29,8 @@ r4 = r_off;
 r5 = r_off;
 r6 = r_off;
 
-polo = 0.0537;
-Kp_wm = 0.00356;    %Proportional Gain. 0.00356 (calculated) and 20 (empirical. To decrease rise time)
+polo = 0.03668;
+Kp_wm = 0.0146;
 Ki_wm = Kp_wm/(polo);
 
 V_pwm = 10;         %PWM Voltage reference
