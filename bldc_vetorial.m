@@ -24,7 +24,7 @@ dc_a = 0;
 dc_b = 0;
 dc_c = 0;
 
-Kp_wm = 1.5636;
+Kp_wm = 1.612227;
 Ki_wm = Kp_wm/(3.0914);
 Kp_Id = 0.697;
 Ki_Id = Kp_Id*66.714;
@@ -89,8 +89,8 @@ for(T = 1:n)
         Ta(T) = kt * Ia(T) * ea(T);
         Tb(T) = kt * Ib(T) * eb(T);
         Tc(T) = kt * Ic(T) * ec(T);
-        Te(T) = Ta(T) + Tb(T) + Tc(T);
-              
+        Te(T) = 2 *( Ta(T) + Tb(T) + Tc(T));
+                  
         dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
         wm(T) = wm(T-1) + dwm(T);
         dtheta_m(T) = wm(T) * t;

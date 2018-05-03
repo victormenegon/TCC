@@ -271,7 +271,7 @@ end
     Tb(T) = kt * Ib(T-1) * eb;
     Tc(T) = kt * Ic(T-1) * ec;
     
-    Te(T) = Ta(T) + Tb(T) + Tc(T);
+    Te(T) = 2 *( Ta(T) + Tb(T) + Tc(T));
     
     dIa(T) = ((-2*k1(T)*Ia(T-1))+(-2*Rs*Ia(T-1))+(k2(T)*Ib(T-1))+(Rs*Ib(T-1))+(k3(T)*Ic(T-1))+(Rs*Ic(T-1))+((2*k4(T)*V_bus)-(k5(T)*V_bus)-(k6(T)*V_bus)+(Eb(T)+Ec(T)-2*Ea(T))))*(t/(3*Ldq));
     dIb(T) = ((-2*k2(T)*Ib(T-1))+(-2*Rs*Ib(T-1))+(k1(T)*Ia(T-1))+(Rs*Ia(T-1))+(k3(T)*Ic(T-1))+(Rs*Ic(T-1))+((2*k5(T)*V_bus)-(k4(T)*V_bus)-(k6(T)*V_bus)+(Ea(T)+Ec(T)-2*Eb(T))))*(t/(3*Ldq));
