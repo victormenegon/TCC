@@ -13,7 +13,7 @@ J = 8.7e-4;         %Kgm^2
 Rs = 4.65;           %ohms
 P = 4;              %polos
 P_2 = P/2;          %pares de polos
-Ldq = 69.7e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
+Ldq = 67.6e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 kt = 0.359;         %V*s/rad
 t = 0.000001;       %passo de calculo
 c_360 = 2*pi;
@@ -43,11 +43,11 @@ for(T = 1:n)
         
         err_Iq(T) = Iq_ref(T) - Iq(T-1);
         err_int_Iq(T) = err_int_Iq(T-1) + err_Iq(T)*t;
-        Vq_ref(T) = Kp_Iq * err_Iq(T) + err_int_Iq(T) + Ldq*wm(T-1)*Id(T-1) + wm(T-1)*kt;
+        Vq_ref(T) = Kp_Iq * err_Iq(T) + Ki_Id*err_int_Iq(T) + Ldq*wm(T-1)*Id(T-1) + wm(T-1)*kt;
         
         err_Id(T) = Id_ref(T) - Id(T-1);
         err_int_Id(T) = err_int_Id(T-1) + err_Id(T)*t;
-        Vd_ref(T) = Kp_Id * err_Id(T) + err_int_Id(T) - Ldq*wm(T-1)*Iq(T-1);
+        Vd_ref(T) = Kp_Id * err_Id(T) + Ki_Iq*err_int_Id(T) - Ldq*wm(T-1)*Iq(T-1);
 
         time_lapsed(T) = T*t;
         
@@ -73,9 +73,9 @@ for(T = 1:n)
         max_V = max(Voltage_Phase);
         V_neutral(T) = 0.5 * (max_V + min_V);
                
-        Va(T) = Va_a(T) - V_neutral(T);
-        Vb(T) = Vb_a(T) - V_neutral(T);
-        Vc(T) = Vc_a(T) - V_neutral(T);
+        Va(T) = Va_a(T);%- V_neutral(T);
+        Vb(T) = Vb_a(T);% - V_neutral(T);
+        Vc(T) = Vc_a(T);% - V_neutral(T);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         dIa(T) = (Va(T) - Rs * Ia(T-1) - Ea(T))*(t/Ldq);
@@ -89,7 +89,7 @@ for(T = 1:n)
         Ta(T) = kt * Ia(T) * ea(T);
         Tb(T) = kt * Ib(T) * eb(T);
         Tc(T) = kt * Ic(T) * ec(T);
-        Te(T) = 2 *( Ta(T) + Tb(T) + Tc(T));
+        Te(T) = 2 *(Ta(T) + Tb(T) + Tc(T));
                   
         dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
         wm(T) = wm(T-1) + dwm(T);
@@ -97,7 +97,7 @@ for(T = 1:n)
         theta_m(T) = normalize_angle(theta_m(T-1) + dtheta_m(T));
         theta_e(T) = normalize_angle(theta_e(T-1) + P_2 * dtheta_m(T));
         
-        theta_a(T) = theta_e(T);                 %electrical angle A, B and C
+        theta_a(T) = theta_e(T); %electrical angle A, B and C
         theta_b(T) = normalize_angle(theta_a(T) + (4*c_360)/6);
         theta_c(T) = normalize_angle(theta_a(T) + (c_360)/3);
 
