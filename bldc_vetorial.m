@@ -7,7 +7,7 @@ clc;
 n = 10000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
-Tload = 0;          %Nm
+Tload = 0.1;          %Nm
 B = 2.8142e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
 Rs = 4.65;           %ohms
@@ -37,6 +37,10 @@ for(T = 1:n)
     
     if (T-1 > 0)
 
+    if(T >= 10000000/2)
+            wm_ref = 209; 
+    end
+       
         err_wm(T) = wm_ref - wm(T-1);                                 %Proportional error
         err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;                %Integral error
         Iq_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);       %controller
@@ -162,10 +166,10 @@ for(T = 1:n)
     end
 end
 subplot(4,1,1);
-plot(time_lapsed,theta_e,'color','g');
+plot(time_lapsed,Ec,'color','g');
 subplot(4,1,2);
 plot(time_lapsed,wm,'color','b');
 subplot(4,1,3);
-plot(time_lapsed,Iq,'color','y');
+plot(time_lapsed,Ea,'color','y');
 subplot(4,1,4);
-plot(time_lapsed,Id,'color','r');
+plot(time_lapsed,Eb,'color','r');
