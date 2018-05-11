@@ -4,7 +4,7 @@ clc;
 
 %************ Constants and Variables initialization ************%
 
-n = 10000000;       %simulation lenght
+n = 1000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
 Tload = 0.1;          %Nm
@@ -15,7 +15,7 @@ P = 4;              %polos
 P_2 = P/2;          %pares de polos
 Ldq = 69.7e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 kt = 0.359;         %V*s/rad
-t = 0.000001;       %passo de calculo
+t = 0.00001;       %passo de calculo
 c_360 = 2*pi;
 phase = -pi/6;      %para corrigir o defasamento entre Vx e Ex, 
                     %pq foi implementado com 30 de avanço.
@@ -33,7 +33,7 @@ polo = 0.03668;
 Kp_wm = 0.0146;
 Ki_wm = Kp_wm/(polo);
 
-V_pwm = 10;         %PWM Voltage reference
+V_pwm = 1;         %PWM Voltage reference
 V_bus = 311;        %Bus Voltage
 Fs = 5000;          %Switching frequency of inverter
 Ts = 1/Fs;
@@ -46,7 +46,7 @@ for(T = 1:n)
 
 if (T-1 > 0)
 
-    if(T >= 10000000/2)
+    if(T >= 1000000/2)
             Tload = 0.2; 
     end
     
@@ -192,8 +192,8 @@ end
     Tb(T) = kt * Ib(T-1) * eb;
     Tc(T) = kt * Ic(T-1) * ec;
     
-    Te(T) = 2 *( Ta(T) + Tb(T) + Tc(T));
-    
+    Te(T) =(Ta(T) + Tb(T) + Tc(T));
+  
     dIa(T) = ((-2*k1(T)*Ia(T-1))+(-2*Rs*Ia(T-1))+(k2(T)*Ib(T-1))+(Rs*Ib(T-1))+(k3(T)*Ic(T-1))+(Rs*Ic(T-1))+((2*k4(T)*V_bus)-(k5(T)*V_bus)-(k6(T)*V_bus)+(Eb(T)+Ec(T)-2*Ea(T))))*(t/(3*Ldq));
     dIb(T) = ((-2*k2(T)*Ib(T-1))+(-2*Rs*Ib(T-1))+(k1(T)*Ia(T-1))+(Rs*Ia(T-1))+(k3(T)*Ic(T-1))+(Rs*Ic(T-1))+((2*k5(T)*V_bus)-(k4(T)*V_bus)-(k6(T)*V_bus)+(Ea(T)+Ec(T)-2*Eb(T))))*(t/(3*Ldq));
     dIc(T) = ((-2*k3(T)*Ic(T-1))+(-2*Rs*Ic(T-1))+(k1(T)*Ia(T-1))+(Rs*Ia(T-1))+(k2(T)*Ib(T-1))+(Rs*Ib(T-1))+((2*k6(T)*V_bus)-(k4(T)*V_bus)-(k5(T)*V_bus)+(Ea(T)+Eb(T)-2*Ec(T))))*(t/(3*Ldq));
@@ -292,8 +292,8 @@ end
  subplot(2,1,1);
  plot(time_lapsed,Ia,'color','g');
  hold;
- plot(time_lapsed,Ib,'color','r');
- plot(time_lapsed,Ic,'color','b');
+ plot(time_lapsed,sw1/10,'color','r');
+ plot(time_lapsed,sw2/10,'color','b');
  subplot(2,1,2);
  plot(time_lapsed,wm,'color','y');
 % subplot(3,1,1);

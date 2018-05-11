@@ -4,10 +4,10 @@ clc;
 
 %************ Constants and Variables initialization ************%
 
-n = 10000000;       %simulation lenght
+n = 1000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
-Tload = 0.1;          %Nm
+Tload = 0.05;          %Nm
 B = 2.8142e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
 Rs = 4.65;           %ohms
@@ -15,7 +15,7 @@ P = 4;              %polos
 P_2 = P/2;          %pares de polos
 Ldq = 67.6e-3;        % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 kt = 0.359;         %V*s/rad
-t = 0.000001;       %passo de calculo
+t = 0.0001;       %passo de calculo
 c_360 = 2*pi;
 V_bus = 150;
 
@@ -24,12 +24,10 @@ dc_a = 0;
 dc_b = 0;
 dc_c = 0;
 
-Kp_wm = 1.612227;
-Ki_wm = Kp_wm/(3.0914);
-Kp_Id = 0.697;
-Ki_Id = Kp_Id*66.714;
-Kp_Iq = 0.676;
-Ki_Iq = Kp_Iq*68.7871;
+Kp_wm = 1.0759;%(2*damp1*SG*J)/(P_2*P_2*kt);
+Ki_wm = 955;%(SG*SG*J)/(P_2*P_2*kt);
+Kp_Idq = 295;
+Ki_Idq = 666933;
 
 %****************************************************************%
 
@@ -37,21 +35,21 @@ for(T = 1:n)
     
     if (T-1 > 0)
 
-    if(T >= 10000000/2)
-            wm_ref = 209; 
+    if(T >= 100000/2)
+            Tload = 0.05;
     end
        
         err_wm(T) = wm_ref - wm(T-1);                                 %Proportional error
         err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;                %Integral error
-        Iq_ref(T) =  Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);       %controller
+        Iq_ref(T) = 0.5;%Kp_wm * err_wm(T) + Ki_wm * err_int_wm(T);       %controller
         
         err_Iq(T) = Iq_ref(T) - Iq(T-1);
         err_int_Iq(T) = err_int_Iq(T-1) + err_Iq(T)*t;
-        Vq_ref(T) = Kp_Iq * err_Iq(T) + Ki_Id*err_int_Iq(T) + Ldq*wm(T-1)*Id(T-1) + wm(T-1)*kt;
+        Vq_ref(T) = Kp_Idq * err_Iq(T) + Ki_Idq*err_int_Iq(T);% + Ldq*wm(T-1)*Id(T-1) + wm(T-1)*kt;
         
         err_Id(T) = Id_ref(T) - Id(T-1);
         err_int_Id(T) = err_int_Id(T-1) + err_Id(T)*t;
-        Vd_ref(T) = Kp_Id * err_Id(T) + Ki_Iq*err_int_Id(T) - Ldq*wm(T-1)*Iq(T-1);
+        Vd_ref(T) = Kp_Idq * err_Id(T) + Ki_Idq*err_int_Id(T);% - Ldq*wm(T-1)*Iq(T-1);
 
         time_lapsed(T) = T*t;
         
@@ -66,18 +64,18 @@ for(T = 1:n)
         ea(T) = F_theta_e(theta_a(T-1));
         eb(T) = F_theta_e(theta_b(T-1));
         ec(T) = F_theta_e(theta_c(T-1));
-        
-        Ea(T) = kt * wm(T-1) * ea(T);              %BEMF A, B and C
-        Eb(T) = kt * wm(T-1) * eb(T);
-        Ec(T) = kt * wm(T-1) * ec(T);
+
+        Ea(T) = kt * wm(T-1) * sin(theta_a(T-1));%ea(T);              %BEMF A, B and C
+        Eb(T) = kt * wm(T-1) * sin(theta_b(T-1));%eb(T);
+        Ec(T) = kt * wm(T-1) * sin(theta_c(T-1));%ec(T);
 
         %%%%%% SVM Modulation %%%%%% 13/02/18 FONTE: https://www.embedded.com/design/real-world-applications/4441150/2/Painless-MCU-implementation-of-space-vector-modulation-for-electric-motor-systems
-        Voltage_Phase = [Va_a(T) Vb_a(T) Vc_a(T)];
-        min_V = min(Voltage_Phase);
-        max_V = max(Voltage_Phase);
-        V_neutral(T) = 0.5 * (max_V + min_V);
+%         Voltage_Phase = [Va_a(T) Vb_a(T) Vc_a(T)];    
+%         min_V = min(Voltage_Phase);
+%         max_V = max(Voltage_Phase);
+%         V_neutral(T) = 0.5 * (max_V + min_V);
                
-        Va(T) = Va_a(T);%- V_neutral(T);
+        Va(T) = Va_a(T);% - V_neutral(T);
         Vb(T) = Vb_a(T);% - V_neutral(T);
         Vc(T) = Vc_a(T);% - V_neutral(T);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,7 +91,7 @@ for(T = 1:n)
         Ta(T) = kt * Ia(T) * ea(T);
         Tb(T) = kt * Ib(T) * eb(T);
         Tc(T) = kt * Ic(T) * ec(T);
-        Te(T) = 2 *(Ta(T) + Tb(T) + Tc(T));
+        Te(T) = (Ta(T) + Tb(T) + Tc(T));
                   
         dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
         wm(T) = wm(T-1) + dwm(T);
@@ -115,6 +113,7 @@ for(T = 1:n)
         
         dwm = zeros(n,1);
         wm = zeros(n,1);
+
         dtheta_m = zeros(n,1);
         theta_m = zeros(n,1);
         theta_m = zeros(n,1);
@@ -165,11 +164,12 @@ for(T = 1:n)
 
     end
 end
-subplot(4,1,1);
-plot(time_lapsed,Ec,'color','g');
-subplot(4,1,2);
-plot(time_lapsed,wm,'color','b');
-subplot(4,1,3);
-plot(time_lapsed,Ea,'color','y');
-subplot(4,1,4);
-plot(time_lapsed,Eb,'color','r');
+
+subplot(3,1,1);
+plot(time_lapsed,Ea,'color','g');
+hold;
+plot(time_lapsed,Va,'color','b');
+subplot(3,1,2);
+plot(time_lapsed,wm,'color','r');
+subplot(3,1,3);
+plot(time_lapsed,Te,'color','y');
