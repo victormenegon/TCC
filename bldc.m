@@ -28,6 +28,9 @@ r3 = r_off;
 r4 = r_off;
 r5 = r_off;
 r6 = r_off;
+aberta = 0;
+conduz = 1;
+estado = [aberta; aberta; aberta; aberta; aberta; aberta];
 
 polo = 0.03668;
 Kp_wm = 0.0146;
@@ -49,13 +52,6 @@ if (T-1 > 0)
     if(T >= 1000000/2)
             Tload = 0.2; 
     end
-    
-    r1 = r_off;
-    r2 = r_off;
-    r3 = r_off;
-    r4 = r_off;
-    r5 = r_off;
-    r6 = r_off;
     
     err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
     err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
@@ -91,69 +87,41 @@ if (T-1 > 0)
     
     %%%%% Six-Step Modulation %%%%%
     if(theta_e(T-1) <= (pi/6+phase))
-        r1 = r_off;
-        r2 = r_off;
-        r3 = r_off;
-        r4 = r_on;
-        r5 = r_on;
-        r6 = r_off;
-        
+        estado = [aberta; aberta; aberta; conduz; conduz; aberta];
     elseif(theta_e(T-1) > (pi/6+phase) && theta_e(T-1) <= (pi/2+phase))
-        r1 = r_on;
-        r2 = r_off;
-        r3 = r_off;
-        r4 = r_on;
-        r5 = r_off;
-        r6 = r_off;
-        
+        estado = [conduz; aberta; aberta; conduz; aberta; aberta];
     elseif(theta_e(T-1) > (pi/2+phase) && theta_e(T-1) <= (5*pi/6+phase))
-        r1 = r_on;
-        r2 = r_off;
-        r3 = r_off;
-        r4 = r_off;
-        r5 = r_off;
-        r6 = r_on;
-        
+        estado = [conduz; aberta; aberta; aberta; aberta; conduz];
     elseif(theta_e(T-1) > (5*pi/6+phase) && theta_e(T-1) <= (7*pi/6+phase))
-        r1 = r_off;
-        r2 = r_off;
-        r3 = r_on;
-        r4 = r_off;
-        r5 = r_off;
-        r6 = r_on;
-        
+        estado = [aberta; aberta; conduz; aberta; aberta; conduz];
     elseif(theta_e(T-1) > (7*pi/6+phase) && theta_e(T-1) <= (3*pi/2+phase))
-        r1 = r_off;
-        r2 = r_on;
-        r3 = r_on;
-        r4 = r_off;
-        r5 = r_off;
-        r6 = r_off;
-        
+        estado = [aberta; conduz; conduz; aberta; aberta; aberta];
     elseif(theta_e(T-1) > (3*pi/2+phase) && theta_e(T-1) <= (33*pi/18+phase))
-        r1 = r_off;
-        r2 = r_on;
-        r3 = r_off;
-        r4 = r_off;
-        r5 = r_on;
-        r6 = r_off;
-        
+        estado = [aberta; conduz; aberta; aberta; conduz; aberta];
     else
-        r1 = r_off;
-        r2 = r_off;
-        r3 = r_off;
-        r4 = r_on;
-        r5 = r_on;
-        r6 = r_off;
+        estado = [aberta; aberta; aberta; conduz; conduz; aberta];
     end
-
-if(pwm_st(T) == 0)
+    
     r1 = r_off;
+    r2 = r_off;
     r3 = r_off;
+    r4 = r_off;
     r5 = r_off;
+    r6 = r_off;
+    
+if(pwm_st(T) == 0)
+    estado(1) = aberta;
+    estado(3) = aberta;
+    estado(5) = aberta;
 end
 
-    if(r1 == r_off && r2 == r_off)
+    if(estado(1) == conduz)
+        r1 = r_on;
+    end
+    if(estado(2) == conduz)
+        r2 = r_on;
+    end
+    if(estado(1) == aberta && estado(2) == aberta)
         if(Ia(T-1) >= delta)
             r1 = r_off;
             r2 = r_on;
@@ -162,7 +130,14 @@ end
             r2 = r_off;
         end
     end
-    if(r3 == r_off && r4 == r_off)
+    
+    if(estado(3) == conduz)
+        r3 = r_on;
+    end
+    if(estado(4) == conduz)
+        r4 = r_on;
+    end
+    if(estado(3) == aberta && estado(4) == aberta)
         if(Ib(T-1) >= delta)
             r3 = r_off;
             r4 = r_on;
@@ -171,7 +146,14 @@ end
             r4 = r_off;
         end
     end
-    if(r5 == r_off && r6 == r_off)
+    
+    if(estado(5) == conduz)
+        r5 = r_on;
+    end
+    if(estado(6) == conduz)
+        r6 = r_on;
+    end
+    if(estado(5) == aberta && estado(6) == aberta)
         if(Ic(T-1) >= delta)
             r5 = r_off;
             r6 = r_on;  
@@ -221,32 +203,32 @@ end
     
 time_lapsed(T) = T*t;
 
-if(r1 == r_on)
+if(estado(1)== conduz)
     sw1(T) = 1;
 else
     sw1(T) = 0;
 end
-if(r2 == r_on)
+if(estado(2)== conduz)
     sw2(T) = 1;
 else
     sw2(T) = 0;
 end
-if(r3 == r_on)
+if(estado(3)== conduz)
     sw3(T) = 1;
 else
     sw3(T) = 0;
 end
-if(r4 == r_on)
+if(estado(4)== conduz)
     sw4(T) = 1;
 else
     sw4(T) = 0;
 end
-if(r5 == r_on)
+if(estado(5)== conduz)
     sw5(T) = 1;
 else
     sw5(T) = 0;
 end
-if(r6 == r_on)
+if(estado(6)== conduz)
     sw6(T) = 1;
 else
     sw6(T) = 0;
@@ -289,13 +271,13 @@ else %Variables inicialization
 end
 end
 
- subplot(2,1,1);
- plot(time_lapsed,Ia,'color','g');
+ plot(time_lapsed,sw1+6,'color','g');
  hold;
- plot(time_lapsed,sw1/10,'color','r');
- plot(time_lapsed,sw2/10,'color','b');
- subplot(2,1,2);
- plot(time_lapsed,wm,'color','y');
+ plot(time_lapsed,sw2+4,'color','r');
+ plot(time_lapsed,sw3+2,'color','g');
+ plot(time_lapsed,sw4,'color','r');
+ plot(time_lapsed,sw5-2,'color','g');
+ plot(time_lapsed,sw6-4,'color','r');
 % subplot(3,1,1);
 % plot(time_lapsed,sw1-sw2,'color','b');
 % subplot(3,1,2);
