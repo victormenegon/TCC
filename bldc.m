@@ -197,42 +197,72 @@ end
     Ib(T) = Ib(T-1) + dIb(T);
     Ic(T) = Ic(T-1) + dIc(T);
     
-    Va(T) = Rs*Ia(T) + Ldq*dIa(T) +  Ea(T);
-    Vb(T) = Rs*Ib(T) + Ldq*dIb(T) +  Eb(T);
-    Vc(T) = Rs*Ic(T) + Ldq*dIc(T) +  Ec(T);
+    Va(T) = r2*Ia(T);
+    Vb(T) = r4*Ib(T);
+    Vc(T) = r6*Ic(T);
     
 time_lapsed(T) = T*t;
 
-if(estado(1)== conduz)
+if(r1 == r_on)
     sw1(T) = 1;
 else
     sw1(T) = 0;
 end
-if(estado(2)== conduz)
+if(r2 == r_on)
     sw2(T) = 1;
 else
     sw2(T) = 0;
 end
-if(estado(3)== conduz)
+if(r3 == r_on)
     sw3(T) = 1;
 else
     sw3(T) = 0;
 end
-if(estado(4)== conduz)
+if(r4 == r_on)
     sw4(T) = 1;
 else
     sw4(T) = 0;
 end
-if(estado(5)== conduz)
+if(r5 == r_on)
     sw5(T) = 1;
 else
     sw5(T) = 0;
 end
-if(estado(6)== conduz)
+if(r6 == r_on)
     sw6(T) = 1;
 else
     sw6(T) = 0;
 end
+% if(estado(1)== conduz)
+%     sw1(T) = 1;
+% else
+%     sw1(T) = 0;
+% end
+% if(estado(2)== conduz)
+%     sw2(T) = 1;
+% else
+%     sw2(T) = 0;
+% end
+% if(estado(3)== conduz)
+%     sw3(T) = 1;
+% else
+%     sw3(T) = 0;
+% end
+% if(estado(4)== conduz)
+%     sw4(T) = 1;
+% else
+%     sw4(T) = 0;
+% end
+% if(estado(5)== conduz)
+%     sw5(T) = 1;
+% else
+%     sw5(T) = 0;
+% end
+% if(estado(6)== conduz)
+%     sw6(T) = 1;
+% else
+%     sw6(T) = 0;
+% end
 else %Variables inicialization
     
     dwm = zeros(n,1);
@@ -274,22 +304,11 @@ end
  plot(time_lapsed,sw1+6,'color','g');
  hold;
  plot(time_lapsed,sw2+4,'color','r');
- plot(time_lapsed,sw3+2,'color','g');
- plot(time_lapsed,sw4,'color','r');
- plot(time_lapsed,sw5-2,'color','g');
- plot(time_lapsed,sw6-4,'color','r');
-% subplot(3,1,1);
-% plot(time_lapsed,sw1-sw2,'color','b');
-% subplot(3,1,2);
-% plot(time_lapsed,sw3-sw4,'color','r');
-% subplot(3,1,3);
-% plot(time_lapsed,sw5-sw6,'color','g');
-% subplot(6,1,4);
-% plot(time_lapsed,sw4,'color','y');
-% subplot(6,1,5);
-% plot(time_lapsed,sw5,'color','b');
-% subplot(6,1,6);
-% plot(time_lapsed,sw6,'color','o');
-
-
-
+%  plot(time_lapsed,sw3+2,'color','g');
+%  plot(time_lapsed,sw4,'color','r');
+%  plot(time_lapsed,sw5-2,'color','g');
+%  plot(time_lapsed,sw6-4,'color','r');
+ plot(time_lapsed,Ia+5,'color','b');
+%  plot(time_lapsed,Ib+1,'color','y');
+%  plot(time_lapsed,Ic-3,'color','b');
+plot(time_lapsed,theta_e,'color','y');
