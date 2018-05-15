@@ -84,22 +84,38 @@ if (T-1 > 0)
     Ec(T) = kt * wm(T-1) * ec;
     
     %%%%% Six-Step Modulation %%%%%
-    if(theta_e(T-1) <= (pi/6+phase))
-        estado = [aberta; aberta; aberta; conduz; conduz; aberta];
-    elseif(theta_e(T-1) > (pi/6+phase) && theta_e(T-1) <= (pi/2+phase))
+    if(theta_e(T-1) >= pi/6 && theta_e(T-1) < pi/2)
         estado = [conduz; aberta; aberta; conduz; aberta; aberta];
-    elseif(theta_e(T-1) > (pi/2+phase) && theta_e(T-1) <= (5*pi/6+phase))
+    elseif(theta_e(T-1) >= pi/2 && theta_e(T-1) < 150*pi/180)
         estado = [conduz; aberta; aberta; aberta; aberta; conduz];
-    elseif(theta_e(T-1) > (5*pi/6+phase) && theta_e(T-1) <= (7*pi/6+phase))
+    elseif(theta_e(T-1) >= 150*pi/180 && theta_e(T-1) < 210*pi/180)
         estado = [aberta; aberta; conduz; aberta; aberta; conduz];
-    elseif(theta_e(T-1) > (7*pi/6+phase) && theta_e(T-1) <= (3*pi/2+phase))
+    elseif(theta_e(T-1) >= 210*pi/180 && theta_e(T-1) < 270*pi/180)
         estado = [aberta; conduz; conduz; aberta; aberta; aberta];
-    elseif(theta_e(T-1) > (3*pi/2+phase) && theta_e(T-1) <= (33*pi/18+phase))
+    elseif(theta_e(T-1) >= 270*pi/180 && theta_e(T-1) < 330*pi/180)
         estado = [aberta; conduz; aberta; aberta; conduz; aberta];
-    else
+    elseif(theta_e(T-1) >= 330*pi/180 && theta_e(T-1) < 2*pi)
         estado = [aberta; aberta; aberta; conduz; conduz; aberta];
-    end
+    elseif(theta_e(T-1) >= 0 && theta_e(T-1) < 30*pi/180)
+        estado = [aberta; aberta; aberta; conduz; conduz; aberta];
+    end        
     
+%     if(theta_e(T-1) <= (pi/6+phase))
+%         estado = [aberta; aberta; aberta; conduz; conduz; aberta];
+%     elseif(theta_e(T-1) > (pi/6+phase) && theta_e(T-1) <= (pi/2+phase))
+%         estado = [conduz; aberta; aberta; conduz; aberta; aberta];
+%     elseif(theta_e(T-1) > (pi/2+phase) && theta_e(T-1) <= (5*pi/6+phase))
+%         estado = [conduz; aberta; aberta; aberta; aberta; conduz];
+%     elseif(theta_e(T-1) > (5*pi/6+phase) && theta_e(T-1) <= (7*pi/6+phase))
+%         estado = [aberta; aberta; conduz; aberta; aberta; conduz];
+%     elseif(theta_e(T-1) > (7*pi/6+phase) && theta_e(T-1) <= (3*pi/2+phase))
+%         estado = [aberta; conduz; conduz; aberta; aberta; aberta];
+%     elseif(theta_e(T-1) > (3*pi/2+phase) && theta_e(T-1) <= (33*pi/18+phase))
+%         estado = [aberta; conduz; aberta; aberta; conduz; aberta];
+%     else
+%         estado = [aberta; aberta; aberta; conduz; conduz; aberta];
+%     end
+%     
     r1 = r_off;
     r2 = r_off;
     r3 = r_off;
@@ -306,13 +322,22 @@ end
 % plot(time_lapsed,s5+2,'color','b');
 % plot(time_lapsed,s6+1,'color','y');
 % plot(time_lapsed,Ic+2,'color','black');
-subplot(2,1,1);
-plot(time_lapsed, 50*Ia, 'color','r');
+% subplot(2,1,1);
+% plot(time_lapsed, 50*Ia, 'color','r');
+% hold;
+% plot(time_lapsed, Ea, 'color','b');
+% plot(time_lapsed, Va/6, 'color','g');
+% subplot(2,1,2);
+% plot(time_lapsed, wm);
+% grid on;
+
+plot(time_lapsed,sw1+8,'color','b');
 hold;
-plot(time_lapsed, Ea, 'color','b');
-plot(time_lapsed, Va/6, 'color','g');
-subplot(2,1,2);
-plot(time_lapsed, wm);
-grid on;
-
-
+plot(time_lapsed,sw2+7,'color','y');
+plot(time_lapsed,sw3+5,'color','b');
+plot(time_lapsed,sw4+4,'color','y');
+plot(time_lapsed,sw5+2,'color','b');
+plot(time_lapsed,sw6+1,'color','y');
+plot(time_lapsed,Ea);
+plot(time_lapsed,Eb);
+plot(time_lapsed,Ec);
