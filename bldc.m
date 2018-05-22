@@ -7,7 +7,7 @@ clc;
 n = 10000000;       %simulation lenght
 
 wm_ref = 167;       %rad/s
-Tload = 0.2;          %Nm
+Tload = 0.02;          %Nm
 B = 2.8142e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
 Rs = 4.65;           %ohms
@@ -33,7 +33,7 @@ conduz = 1;
 estado = [aberta; aberta; aberta; aberta; aberta; aberta];
 
 polo = 0.03668;
-Kp_wm = 0.0146;
+Kp_wm = 0.04064;
 Ki_wm = Kp_wm/(polo);
 
 V_pwm = 1;         %PWM Voltage reference
@@ -49,8 +49,8 @@ for(T = 1:n)
 
 if (T-1 > 0)
 
-    if(T >= 10000000/4)
-        Tload = 0.2;
+    if(T >= n/2)
+        Tload = 0.32;
     end
     err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
     err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
@@ -115,7 +115,7 @@ if (T-1 > 0)
 %     else
 %         estado = [aberta; aberta; aberta; conduz; conduz; aberta];
 %     end
-%     
+
     r1 = r_off;
     r2 = r_off;
     r3 = r_off;
@@ -190,15 +190,10 @@ if (T-1 > 0)
     
     dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
     wm(T) = wm(T-1) + dwm(T);
-    
     dtheta_m(T) = wm(T) * t;
-    
     theta_m(T) = (theta_m(T-1) + dtheta_m(T));
-    
     theta_m(T) = normalize_angle(theta_m(T));
-    
     theta_e(T) = theta_e(T-1) + P_2 * dtheta_m(T);
-    
     theta_e(T) = normalize_angle(theta_e(T));
     
     Ia(T) = Ia(T-1) + dIa(T);
@@ -328,16 +323,16 @@ end
 % plot(time_lapsed, Ea, 'color','b');
 % plot(time_lapsed, Va/6, 'color','g');
 % subplot(2,1,2);
-% plot(time_lapsed, wm);
+ plot(time_lapsed, wm);
 % grid on;
 
-plot(time_lapsed,sw1+8,'color','b');
-hold;
-plot(time_lapsed,sw2+7,'color','y');
-plot(time_lapsed,sw3+5,'color','b');
-plot(time_lapsed,sw4+4,'color','y');
-plot(time_lapsed,sw5+2,'color','b');
-plot(time_lapsed,sw6+1,'color','y');
-plot(time_lapsed,Ea);
-plot(time_lapsed,Eb);
-plot(time_lapsed,Ec);
+% plot(time_lapsed,sw1+8,'color','b');
+% hold;
+% plot(time_lapsed,sw2+7,'color','y');
+% plot(time_lapsed,sw3+5,'color','b');
+% plot(time_lapsed,sw4+4,'color','y');
+% plot(time_lapsed,sw5+2,'color','b');
+% plot(time_lapsed,sw6+1,'color','y');
+% plot(time_lapsed,Ea);
+% plot(time_lapsed,Eb);
+% plot(time_lapsed,Ec);
