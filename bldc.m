@@ -6,7 +6,7 @@ clc;
 
 n = 10000000;       %simulation lenght
 
-wm_ref = 167;       %rad/s
+wm_ref = 41.88;       %rad/s
 Tload = 0.02;          %Nm
 B = 2.8142e-4;         %Nms
 J = 8.7e-4;         %Kgm^2
@@ -33,7 +33,7 @@ conduz = 1;
 estado = [aberta; aberta; aberta; aberta; aberta; aberta];
 
 polo = 0.03668;
-Kp_wm = 0.04064;
+Kp_wm = 0.04147;
 Ki_wm = Kp_wm/(polo);
 
 V_pwm = 1;         %PWM Voltage reference
@@ -50,7 +50,8 @@ for(T = 1:n)
 if (T-1 > 0)
 
     if(T >= n/2)
-        Tload = 0.32;
+%          Tload = 0.22;
+         wm_ref = 167;
     end
     err_wm(T) = wm_ref - wm(T-1);                   %Proportional error
     err_int_wm(T) = err_int_wm(T-1) + err_wm(T)*t;  %Integral error
@@ -200,10 +201,10 @@ if (T-1 > 0)
     Ib(T) = Ib(T-1) + dIb(T);
     Ic(T) = Ic(T-1) + dIc(T);
     
-    Va(T) = Rs*Ia(T)+k4(T)*V_bus;
-    Vb(T) = Rs*Ib(T)+k5(T)*V_bus;
-    Vc(T) = Rs*Ic(T)+k6(T)*V_bus;
-    
+    Va(T) = Rs*Ia(T)+k4(T)*V_bus - V_bus/2;
+    Vb(T) = Rs*Ib(T)+k5(T)*V_bus- V_bus/2;
+    Vc(T) = Rs*Ic(T)+k6(T)*V_bus- V_bus/2;
+
     time_lapsed(T) = T*t;
     
     if(r1 == r_on)
@@ -309,7 +310,7 @@ end
 
 % plot(time_lapsed,s1+8,'color','b');
 % hold;
-% plot(time_lapsed,s2+7,'color','y');
+% plot(time_lapsed,s2+7,'color','y');   
 % plot(time_lapsed,Ia+8,'color','black');
 % plot(time_lapsed,s3+5,'color','b');
 % plot(time_lapsed,s4+4,'color','y');
@@ -319,12 +320,14 @@ end
 % plot(time_lapsed,Ic+2,'color','black');
 % subplot(2,1,1);
 % plot(time_lapsed, 50*Ia, 'color','r');
-% hold;
-% plot(time_lapsed, Ea, 'color','b');
+ plot(time_lapsed, Va, 'color','b');
+
+hold;
+ plot(time_lapsed, Ea, 'color','r');
 % plot(time_lapsed, Va/6, 'color','g');
 % subplot(2,1,2);
- plot(time_lapsed, wm);
-% grid on;
+%  plot(time_lapsed, wm);
+grid on;
 
 % plot(time_lapsed,sw1+8,'color','b');
 % hold;
