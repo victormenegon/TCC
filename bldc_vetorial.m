@@ -4,9 +4,9 @@ clc;
 
 %************ Constants and Variables initialization ************%
 
-n = 1000000;           %simulation lenght
+n = 2000000;           %simulation lenght
 
-Tload = 0.1;           %Nm
+Tload = 0.0;           %Nm
 B = 2.8142e-4;         %Nms
 J = 8.7e-4;            %Kgm^2
 Rs = 4.65;             %ohms
@@ -16,7 +16,7 @@ Ldq = 67.6e-3;         % Ld = Lq = L-M %%%%CONFIRMAR ISSO%%%%
 kt = 0.359;            %V*s/rad
 t = 0.00001;           %passo de calculo
 c_360 = 2*pi;
-
+offset = 0;
 a = 0;
 b = 0;
 c = 0;
@@ -33,9 +33,10 @@ Ki_Idq = 697;
 for(T = 1:n)
     
     if (T-1 > 0)
-        
-        if(T >= 1000000/2)
-            Tload = 0.1;
+        wm_r(T) = 41.88;
+        if(T >= 12*1000000/10)
+%             Tload = 0.2;
+        wm_r(T) = 167;
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         if(T < 400000)
@@ -48,7 +49,7 @@ for(T = 1:n)
             
         elseif(T > 400000)
             c = c+1;
-            wm_r(T) = 167;
+            
             if(c == 200)
                 c = 0;
                 wm_ref(T) = 0.9975031210986267166*wm_ref(T-1)+0.0012484394506866417*(wm_r(T)+wm_r(T-1)); %Pre-Filtro
@@ -89,65 +90,55 @@ for(T = 1:n)
         theta_b = normalize_angle(theta_a + (4*c_360)/6);
         theta_c = normalize_angle(theta_a + (c_360)/3);
         
-        ea = F_theta_e(theta_a);
-        eb = F_theta_e(theta_b);
-        ec = F_theta_e(theta_c);
-        
-        Ea(T) = kt * wm(T-1) * sin(theta_a);%ea;             %BEMF A, B and C
-        Eb(T) = kt * wm(T-1) * sin(theta_b);%eb;
-        Ec(T) = kt * wm(T-1) * sin(theta_c);%ec;
-        
         %Krishnan p.237 Permanent Magnet Synchronous Machines
         Ks = [cos(theta_a) sin(theta_a);cos(theta_b) sin(theta_b); cos(theta_c) sin(theta_c)];
-        dq0_to_adc = Ks*[Vq_ref(T); Vd_ref(T)];
+        dq0_to_adc = Ks*[Vd_ref(T); Vq_ref(T)];
         
         Va_a(T) = dq0_to_adc(1);
         Vb_a(T) = dq0_to_adc(2);
         Vc_a(T) = dq0_to_adc(3);
         
-        %%%%%% SVM Modulation %%%%%% 13/02/18 FONTE: https://www.embedded.com/design/real-world-applications/4441150/2/Painless-MCU-implementation-of-space-vector-modulation-for-electric-motor-systems
-        %         Voltage_Phase = [Va_a(T) Vb_a(T) Vc_a(T)];
-        %         min_V = min(Voltage_Phase);
-        %         max_V = max(Voltage_Phase);
-        %         V_neutral(T) = 0.5 * (max_V + min_V);
+        ea = F_theta_e(theta_a);
+        eb = F_theta_e(theta_b);
+        ec = F_theta_e(theta_c);
         
+        Ea(T) = kt * wm(T-1) * ea;             %BEMF A, B and C
+        Eb(T) = kt * wm(T-1) * eb;
+        Ec(T) = kt * wm(T-1) * ec;
+        
+        if(0)
+        %%%%%% SVM Modulation %%%%%% 13/02/18 FONTE: https://www.embedded.com/design/real-world-applications/4441150/2/Painless-MCU-implementation-of-space-vector-modulation-for-electric-motor-systems
+        Voltage_Phase = [Va_a(T) Vb_a(T) Vc_a(T)];
+        min_V = min(Voltage_Phase);
+        max_V = max(Voltage_Phase);
+        V_neutral(T) = 0.5 * (max_V + min_V);
+        end
         if(T >= 400000)
-            Va(T) = Va_a(T);% - V_neutral(T);
-            Vb(T) = Vb_a(T);% - V_neutral(T);
-            Vc(T) = Vc_a(T);% - V_neutral(T);
+            Va(T) = Va_a(T) - V_neutral(T);
+            Vb(T) = Vb_a(T) - V_neutral(T);
+            Vc(T) = Vc_a(T) - V_neutral(T);
         else
             Va(T) = V*sin(theta_a);
             Vb(T) = V*sin(theta_b);
             Vc(T) = V*sin(theta_c);
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         dIq(T) = (Vq_ref(T) - wm(T-1)*(kt+Ldq*Id(T-1)) - Rs*Iq(T-1))*(t/Ldq);
-%         dId(T) = (Vd_ref(T) + wm(T-1)*Ldq*Iq(T-1) - Rs*Id(T-1))*(t/Ldq);
-%         Iq(T) = Iq(T-1) + dIq(T);
-%         Id(T) = Id(T-1) + dId(T);
-%         
-%         Idq0_to_abc = Ks*[Iq(T); Id(T)]; 
-%         Ia(T) = Idq0_to_abc(1);
-%         Ib(T) = Idq0_to_abc(2);
-%         Ic(T) = Idq0_to_abc(3);
+        
         dIa(T) = (Va(T) - Rs * Ia(T-1) - Ea(T))*(t/Ldq);
         dIb(T) = (Vb(T) - Rs * Ib(T-1) - Eb(T))*(t/Ldq);
         dIc(T) = (Vc(T) - Rs * Ic(T-1) - Ec(T))*(t/Ldq);
-        
         Ia(T) = Ia(T-1) + dIa(T);
         Ib(T) = Ib(T-1) + dIb(T);
         Ic(T) = Ic(T-1) + dIc(T);
         
         Ks_inv = (2/3)*([cos(theta_a) cos(theta_b) cos(theta_c); sin(theta_a) sin(theta_b) sin(theta_c)]);
         adc_to_dqo = Ks_inv*[Ia(T); Ib(T); Ic(T)];
-        
-        Iq(T) = adc_to_dqo(1);
-        Id(T) = adc_to_dqo(2);
-        
+        Iq(T) = adc_to_dqo(2);
+        Id(T) = adc_to_dqo(1);
         Vadc_to_dqo = Ks_inv*[Va(T); Vb(T); Vc(T)];
-        Vq(T) = Vadc_to_dqo(1);
-        Vd(T) = Vadc_to_dqo(2);
-
+        Vq(T) = Vadc_to_dqo(2);
+        Vd(T) = Vadc_to_dqo(1);
+        
         Te(T) = 1.5*P_2*kt*Iq(T);
         
         dwm(T) = (Te(T) - Tload - B*wm(T-1))*(t/J);
